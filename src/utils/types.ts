@@ -15,5 +15,12 @@ export interface User {
   export interface Permission {
     id: string;
     name: string;
-    description: string;
+    description?: string;
   }
+
+  export interface RoleUpdateData {
+    name: string;
+    permissions: string[];  
+  }
+
+  

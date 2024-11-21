@@ -1,26 +1,21 @@
-
-import type { Permission } from '@/utils/types';
 import { Hono } from 'hono';
+import { prisma } from '@/lib/db';
 
 const app = new Hono()
   .get("/", async (c) => {
-    const permissions: Permission[] = []; // Replace with actual DB query
+    const permissions = await prisma.permission.findMany();
     return c.json(permissions);
   })
   .post("/", async (c) => {
     const data = await c.req.json();
-    // Create permission
-    return c.json({ message: "Permission created", permission: data });
-  })
-  .put("/:id", async (c) => {
-    const id = c.req.param('id');
-    const data = await c.req.json();
-    // Update permission
-    return c.json({ message: "Permission updated", permission: { id, ...data } });
+    const permission = await prisma.permission.create({
+      data
+    });
+    return c.json({ message: "Permission created", permission });
   })
   .delete("/:id", async (c) => {
     const id = c.req.param('id');
-    // Delete permission
+    await prisma.permission.delete({ where: { id } });
     return c.json({ message: "Permission deleted" });
   });
 

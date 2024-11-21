@@ -1,26 +1,62 @@
-
 import type { Role } from '@/utils/types';
 import { Hono } from 'hono';
+import { prisma } from '@/lib/db';
 
 const app = new Hono()
   .get("/", async (c) => {
-    const roles: Role[] = []; // Replace with actual DB query
+    const roles = await prisma.role.findMany({
+      include: { permissions: true }
+    });
     return c.json(roles);
   })
   .post("/", async (c) => {
     const data = await c.req.json();
-    // Create role
-    return c.json({ message: "Role created", role: data });
+    const role = await prisma.role.create({
+      data: {
+        name: data.name,
+        permissions: {
+          connect: data.permissions?.map((id: string) => ({ id })) || []
+        }
+      },
+      include: { permissions: true }
+    });
+    return c.json(role);
   })
   .put("/:id", async (c) => {
-    const id = c.req.param('id');
-    const data = await c.req.json();
-    // Update role
-    return c.json({ message: "Role updated", role: { id, ...data } });
+    try {
+      const id = c.req.param('id');
+      const data = await c.req.json();
+
+      if (!data.name) {
+        return c.json({ error: "Name is required" }, 400);
+      }
+
+      const role = await prisma.role.update({
+        where: { id },
+        data: {
+          name: data.name,
+          permissions: {
+            set: [], // First clear existing permissions
+            connect: data.permissions?.map((id: string) => ({ id })) || []
+          }
+        },
+        include: { 
+          permissions: true
+        }
+      });
+
+      return c.json(role);
+    } catch (error: any) {
+      console.error('Error updating role:', error.message);
+      return c.json({ 
+        error: "Failed to update role",
+        details: error.message 
+      }, 500);
+    }
   })
   .delete("/:id", async (c) => {
     const id = c.req.param('id');
-    // Delete role
+    await prisma.role.delete({ where: { id } });
     return c.json({ message: "Role deleted" });
   });
 
