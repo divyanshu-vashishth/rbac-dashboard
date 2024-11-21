@@ -36,7 +36,7 @@ const app = new Hono()
         data: {
           name: data.name,
           permissions: {
-            set: [], // First clear existing permissions
+            set: [], 
             connect: data.permissions?.map((id: string) => ({ id })) || []
           }
         },
